@@ -5,6 +5,7 @@ import 'package:pre_final/mqtt/state/MQTTAppState.dart';
 import 'package:pre_final/mqtt/MQTTManager.dart';
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:developer' as developer;
 
 class MQTTView extends StatefulWidget {
   @override
@@ -20,6 +21,7 @@ class _MQTTViewState extends State<MQTTView> {
   late MQTTAppState currentAppState;
   late MQTTManager manager;
   int j = 2, max = 100;
+  String t = '5000';
 
   void startCreatingDemoData() async {
     for (int i = 0; i < j; i++) {
@@ -30,12 +32,17 @@ class _MQTTViewState extends State<MQTTView> {
           flspots.add(
             FlSpot(
               double.parse(i.toString()),
-              1.0 * random.nextInt(max),
+              1.0 * int.parse(t),
             ),
           );
+          print(currentAppState.getReceivedText);
           setState(() {
             setChartData();
             j = j + 1;
+            print('hi' + t);
+            t = currentAppState.getReceivedText != ''
+                ? currentAppState.getReceivedText.split(":")[1].split(";")[0]
+                : t;
           });
         },
       );
@@ -91,7 +98,7 @@ class _MQTTViewState extends State<MQTTView> {
         ),
         minX: xm,
         minY: 0,
-        maxY: 120,
+        maxY: 120000,
         clipData: FlClipData.all(),
         extraLinesData: ExtraLinesData(horizontalLines: [
           HorizontalLine(y: 80, color: Colors.green, strokeWidth: 5)
@@ -227,7 +234,9 @@ class _MQTTViewState extends State<MQTTView> {
               decoration: InputDecoration(
             contentPadding:
                 const EdgeInsets.only(left: 0, bottom: 0, top: 0, right: 0),
-            labelText: 'Location : 48.7823;9.1808',
+            labelText: currentAppState.getReceivedText != ''
+                ? currentAppState.getReceivedText.split(";")[1]
+                : '',
           )),
           const SizedBox(height: 20)
         ],

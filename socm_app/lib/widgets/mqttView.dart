@@ -67,7 +67,7 @@ class _MQTTViewState extends State<MQTTView> {
         _buildConnectionStateText(
             _prepareStateMessageFrom(currentAppState.getAppConnectionState)),
         _buildEditableColumn(),
-        _buildScrollableTextWith(currentAppState.getHistoryText)
+        _buildScrollableTextWith(currentAppState.getReceivedText)
       ],
     );
   }
@@ -147,7 +147,7 @@ class _MQTTViewState extends State<MQTTView> {
         width: 400,
         height: 200,
         child: SingleChildScrollView(
-          child: Text(text),
+          child: Text(text != '' ? text.split(":")[1].split(";")[0] : text),
         ),
       ),
     );
