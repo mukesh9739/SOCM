@@ -6,6 +6,7 @@ import 'package:pre_final/mqtt/MQTTManager.dart';
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:developer' as developer;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class MQTTView extends StatefulWidget {
   @override
@@ -20,11 +21,11 @@ class _MQTTViewState extends State<MQTTView> {
   final TextEditingController _topicTextController = TextEditingController();
   late MQTTAppState currentAppState;
   late MQTTManager manager;
-  int j = 2, max = 100;
-  String t = '5000';
+  int j = 2, max = 100, i = 0;
+  String t = '100';
 
   void startCreatingDemoData() async {
-    for (int i = 0; i < j; i++) {
+    for (i = 0; i < j; i++) {
       if (i == 0) continue;
       await Future.delayed((Duration(seconds: 1))).then(
         (value) {
@@ -35,11 +36,16 @@ class _MQTTViewState extends State<MQTTView> {
               1.0 * int.parse(t),
             ),
           );
+          // if ((int.parse(t) * 1.0) < 300) {
+          //   print("entered if");
+          //   instantNofitication();
+          // }
           print(currentAppState.getReceivedText);
           setState(() {
             setChartData();
             j = j + 1;
             print('hi' + t);
+            //if for checking valueselected
             t = currentAppState.getReceivedText != ''
                 ? currentAppState.getReceivedText.split(":")[1].split(";")[0]
                 : t;
@@ -49,56 +55,30 @@ class _MQTTViewState extends State<MQTTView> {
     }
   }
 
+  Future instantNofitication() async {
+    print("notif");
+    var android = AndroidNotificationDetails("id", "channel", "description");
+
+    var ios = IOSNotificationDetails();
+
+    var platform = new NotificationDetails(android: android, iOS: ios);
+
+    await _flutterLocalNotificationsPlugin.show(
+        0, "Demo instant notification", "Tap to do something", platform,
+        payload: "Welcome to demo app");
+  }
+
   LineChartData data = LineChartData();
   void setChartData() {
     double xm = 1.0 * (j > 10 ? j - 10 : 0);
     data = LineChartData(
-        // gridData: FlGridData(
-        //   show: true,
-        //   drawVerticalLine: true,
-        //   getDrawingHorizontalLine: (value) {
-        //     return FlLine(
-        //       color: Color(0xff37434d),
-        //       strokeWidth: 1,
-        //     );
-        //   },
-        //   getDrawingVerticalLine: (value) {
-        //     return FlLine(
-        //       color: Color(0xff37434d),
-        //       strokeWidth: 1,
-        //     );
-        //   },
-        // ),
-        // titlesData: FlTitlesData(
-        //   show: true,
-        //   bottomTitles: SideTitles(
-        //     showTitles: true,
-        //     reservedSize: 22,
-        //     getTextStyles: (value) => TextStyle(
-        //       color: Color(0xff67727d),
-        //       fontWeight: FontWeight.bold,
-        //       fontSize: 15,
-        //     ),
-        //     margin: 8,
-        //   ),
-        //   leftTitles: SideTitles(
-        //     showTitles: true,
-        //     getTextStyles: (value) => const TextStyle(
-        //       color: Color(0xff67727d),
-        //       fontWeight: FontWeight.bold,
-        //       fontSize: 15,
-        //     ),
-        //     reservedSize: 28,
-        //     margin: 12,
-        //   ),
-        // ),
         borderData: FlBorderData(
           show: true,
           border: Border.all(color: Color(0xff37434d), width: 1),
         ),
         minX: xm,
         minY: 0,
-        maxY: 120000,
+        maxY: 300,
         clipData: FlClipData.all(),
         extraLinesData: ExtraLinesData(horizontalLines: [
           HorizontalLine(y: 80, color: Colors.green, strokeWidth: 5)
@@ -130,18 +110,32 @@ class _MQTTViewState extends State<MQTTView> {
     const Color(0xff23b6e6),
     const Color(0xff02d39a),
   ];
-
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   @override
   void initState() {
     super.initState();
     setChartData();
     startCreatingDemoData();
+    notifinitialize();
+  }
 
-    /*
-    _hostTextController.addListener(_printLatestValue);
-    _messageTextController.addListener(_printLatestValue);
-    _topicTextController.addListener(_printLatestValue);
-     */
+  Future notifinitialize() async {
+    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+
+    AndroidInitializationSettings androidInitializationSettings =
+        AndroidInitializationSettings("ic_launcher");
+
+    IOSInitializationSettings iosInitializationSettings =
+        IOSInitializationSettings();
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
+            android: androidInitializationSettings,
+            iOS: iosInitializationSettings);
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
   @override
@@ -152,29 +146,21 @@ class _MQTTViewState extends State<MQTTView> {
     super.dispose();
   }
 
-  /*
-  _printLatestValue() {
-    print("Second text field: ${_hostTextController.text}");
-    print("Second text field: ${_messageTextController.text}");
-    print("Second text field: ${_topicTextController.text}");
-  }
-   */
-
   @override
   Widget build(BuildContext context) {
     final MQTTAppState appState = Provider.of<MQTTAppState>(context);
     // Keep a reference to the app state.
     currentAppState = appState;
-    final Scaffold scaffold = Scaffold(body: _buildColumn());
+    final Scaffold scaffold = Scaffold(
+        appBar: AppBar(
+          title: const Text('SOCM'),
+          backgroundColor: Colors.greenAccent,
+        ),
+        body: _buildColumn());
     return scaffold;
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: const Text('MQTT'),
-      backgroundColor: Colors.greenAccent,
-    );
-  }
+  bool conntoserver = false;
 
   Widget _buildColumn() {
     return Column(
@@ -182,19 +168,31 @@ class _MQTTViewState extends State<MQTTView> {
         _buildConnectionStateText(
             _prepareStateMessageFrom(currentAppState.getAppConnectionState)),
         _buildEditableColumn(),
-        //r_buildScrollableTextWith(currentAppState.getHistoryText),
-        SizedBox(
-          height: MediaQuery.of(context).size.height * .5,
-          width: MediaQuery.of(context).size.width * .9,
-          child: LineChart(data),
+        Visibility(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * .45,
+            width: MediaQuery.of(context).size.width * .9,
+            child: LineChart(data),
+          ),
+          visible: conntoserver,
         ),
       ],
     );
   }
 
+  var _topiclist = [];
+
   Widget _buildEditableColumn() {
     _hostTextController.text = 'earth.informatik.uni-freiburg.de';
-    _topicTextController.text = 'ubilab/test';
+    _topicTextController.text = 'ubilab/test'; //valueChoose.toString();
+    // currentAppState.getReceivedText != ''
+    //     ? (int.parse(currentAppState.getReceivedText
+    //                 .split(":")[1]
+    //                 .split(";")[0]) <
+    //             300
+    //         ? instantNofitication()
+    //         : '')
+    //     : '';
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -205,39 +203,38 @@ class _MQTTViewState extends State<MQTTView> {
                 const EdgeInsets.only(left: 0, bottom: 0, top: 0, right: 0),
             labelText: 'earth.informatik.uni-freiburg.de',
           )),
-          // _buildTextFieldWith(_hostTextController, 'Enter broker address',
-          //    currentAppState.getAppConnectionState),
           const SizedBox(height: 10),
-          TextField(
-              decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.only(left: 0, bottom: 0, top: 0, right: 0),
-            labelText: 'ubilab/test',
-          )),
-          // _buildTextFieldWith(
-          //     _topicTextController,
-          //     'Enter a topic to subscribe or listen',
-          //     currentAppState.getAppConnectionState),
+          DropdownButton<String>(
+            items: _topiclist.map((String dropDownStringItem) {
+              return DropdownMenuItem<String>(
+                value: dropDownStringItem,
+                child: Text(dropDownStringItem),
+              );
+            }).toList(),
+            onChanged: (valueSelectedByUser) {
+              setState(() {
+                valueChoose = valueSelectedByUser;
+              });
+            },
+            value: valueChoose,
+          ),
           const SizedBox(height: 10),
           //_buildPublishMessageRow(),
           const SizedBox(height: 10),
           _buildConnecteButtonFrom(currentAppState.getAppConnectionState),
           const SizedBox(height: 10),
-          TextField(
-              decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.only(left: 0, bottom: 0, top: 0, right: 0),
-            labelText: 'Cylinder 1',
-          )),
-          const SizedBox(height: 10),
-          TextField(
-              decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.only(left: 0, bottom: 0, top: 0, right: 0),
-            labelText: currentAppState.getReceivedText != ''
-                ? currentAppState.getReceivedText.split(";")[1]
-                : '',
-          )),
+          Visibility(
+            child: TextField(
+                decoration: InputDecoration(
+              contentPadding:
+                  const EdgeInsets.only(left: 0, bottom: 0, top: 0, right: 0),
+              labelText: currentAppState.getReceivedText != ''
+                  ? currentAppState.getReceivedText.split(";")[1]
+                  : '',
+            )),
+            visible: conntoserver,
+          ),
+
           const SizedBox(height: 20)
         ],
       ),
@@ -358,10 +355,21 @@ class _MQTTViewState extends State<MQTTView> {
         state: currentAppState);
     manager.initializeMQTTClient();
     manager.connect();
+    setState(() {
+      conntoserver = true;
+    });
+    flspots.clear();
   }
 
   void _disconnect() {
     manager.disconnect();
+    setState(() {
+      conntoserver = false;
+      i = 0;
+      j = 2;
+      flspots.clear();
+    });
+    currentAppState.setReceivedText('');
   }
 
   void _publishMessage(String text) {
