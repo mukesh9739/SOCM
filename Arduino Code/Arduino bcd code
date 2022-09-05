@@ -1,0 +1,44 @@
+/**********************This program takes the sensor value and converts it to BCD value to send it to ESP32 board from Arduino****************************/
+/* select the analog input pin for the sensor*/
+int sensorPin = A0;
+/*Global variables*/
+int i;
+
+void setup() 
+{
+/*Initialize the exchange of messages with the Serial Monitor at a baud rate of 115200*/  
+  Serial.begin(115200);
+/*set the following as output pins*/
+  pinMode(2,OUTPUT);
+  pinMode(3,OUTPUT);
+  pinMode(4,OUTPUT);
+  pinMode(5,OUTPUT);
+  pinMode(6,OUTPUT);
+  pinMode(7,OUTPUT);
+  pinMode(8,OUTPUT);
+}
+/*This function reads the value from the sensor and convert it to BCD to transmit bit by bit to esp32*/ 
+void bcd()
+{
+   i=6;
+ int sensorValue =analogRead(sensorPin);
+ int temp=sensorValue-100;
+  while(i>=0)
+  {
+    if(temp!=0 && temp%2==1)
+    {
+    digitalWrite(8-i,HIGH);
+    }
+    else
+    {
+    digitalWrite(8-i,LOW);
+    }
+    temp=temp/2;
+    i=i-1;
+  }
+}
+
+void loop() {
+bcd();
+delay(1000);
+}
